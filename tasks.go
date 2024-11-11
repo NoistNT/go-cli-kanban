@@ -42,8 +42,8 @@ func (m *model) AddTask() tea.Msg {
 
 	todoList := &m.lists[todo]
 	todoList.InsertItem(len(todoList.Items()), newTask)
-	m.addingTask = false // Return to list view after adding
-	m.textInput.Blur()   // Remove focus from input
+	m.addTaskMode = false // Return to list view after adding
+	m.textInput.Blur()    // Remove focus from input
 
 	return tea.Batch(tea.EnterAltScreen, tea.ClearScreen)
 }
@@ -62,8 +62,19 @@ func (m *model) EditTask() tea.Msg {
 	m.lists[m.focused].RemoveItem(selectedIndex)
 	m.lists[m.focused].InsertItem(selectedIndex, selectedTask)
 
-	m.editMode = false // Return to list view after editing
-	m.textInput.Blur() // Remove focus from input
+	m.editTaskMode = false // Return to list view after editing
+	m.textInput.Blur()     // Remove focus from input
+
+	return tea.Batch(tea.EnterAltScreen, tea.ClearScreen)
+}
+
+// RemoveTask removes the selected task from the list
+func (m *model) RemoveTask() tea.Msg {
+	// Get the index of the selected task
+	selectedIndex := m.lists[m.focused].Index()
+
+	// Remove the task from the list
+	m.lists[m.focused].RemoveItem(selectedIndex)
 
 	return tea.Batch(tea.EnterAltScreen, tea.ClearScreen)
 }

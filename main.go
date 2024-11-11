@@ -14,13 +14,13 @@ type lists []list.Model
 
 // MAIN MODEL
 type model struct {
-	lists      lists
-	focused    int
-	err        error
-	isLoaded   bool
-	addingTask bool
-	editMode   bool
-	textInput  textinput.Model
+	lists        lists
+	focused      int
+	err          error
+	isLoaded     bool
+	addTaskMode  bool
+	editTaskMode bool
+	textInput    textinput.Model
 }
 
 // InitLists initializes the lists To Do, In Progress, and Done
@@ -90,7 +90,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// Handle key inputs differently based on the current mode
 		switch {
-		case m.addingTask:
+		case m.addTaskMode:
 			// In task-adding mode, forward the key events to the text input
 			switch msg.String() {
 			case "enter":
@@ -99,7 +99,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "esc":
 				// Cancel adding task and return to list view
-				m.addingTask = false
+				m.addTaskMode = false
 				return m, nil
 			case "ctrl+c":
 				return m, tea.Quit
@@ -110,7 +110,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 
-		case m.editMode:
+		case m.editTaskMode:
 			// In task-editing mode, forward the key events to the text input
 			switch msg.String() {
 			case "enter":
@@ -119,7 +119,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "esc":
 				// Cancel editing task and return to list view
-				m.addingTask = false
+				m.addTaskMode = false
 				return m, nil
 			case "ctrl+c":
 				return m, tea.Quit
@@ -136,12 +136,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "a":
 				// Toggle to task-adding mode
 				m.textInput.SetValue("") // Clear the input field
-				m.addingTask = true
+				m.addTaskMode = true
 				m.textInput.Focus()
 				return m, nil
 			case "e":
 				// Toggle to edit mode
-				m.editMode = true
+				m.editTaskMode = true
 				m.textInput.SetValue(m.lists[m.focused].SelectedItem().(Task).description)
 				m.textInput.Focus()
 				return m, nil
@@ -156,6 +156,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if msg != nil {
 					return m, msg.(tea.Cmd)
 				}
+				return m, nil
+			case "d":
+				if m.lists[m.focused].Index() < 0 {
+					return m, nil
+				}
+				m.RemoveTask()
 				return m, nil
 			case "backspace":
 				msg := m.MoveTask(-1)
@@ -172,13 +178,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	// Handle task adding mode
-	if m.addingTask {
+	if m.addTaskMode {
 		m.textInput, cmd = m.textInput.Update(msg)
 		return m, cmd
 	}
 
 	// Handle edit task mode
-	if m.editMode {
+	if m.editTaskMode {
 		m.textInput, cmd = m.textInput.Update(msg)
 		return m, cmd
 	}
@@ -195,12 +201,12 @@ func (m *model) View() string {
 	}
 
 	// View for adding a new task
-	if m.addingTask {
+	if m.addTaskMode {
 		return m.StyledInputTaskView("Add task")
 	}
 
 	// View for editing a task
-	if m.editMode {
+	if m.editTaskMode {
 		return m.StyledInputTaskView("Edit task")
 	}
 
